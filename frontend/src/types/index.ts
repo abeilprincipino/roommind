@@ -226,6 +226,7 @@ export interface HomeAssistant {
   entities: Record<string, HassEntityRegistryEntry>;
   devices: Record<string, HassDeviceRegistryEntry>;
   language: string;
+  user?: { is_admin: boolean };
   config: { unit_system: { temperature: string } };
   connection?: HassConnection;
 }

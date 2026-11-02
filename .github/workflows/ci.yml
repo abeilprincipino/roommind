@@ -97,6 +97,10 @@ jobs:
         working-directory: frontend
         run: npx prettier --check src/
 
+      - name: Unit tests
+        working-directory: frontend
+        run: npm test
+
   lint:
     name: Lint
     runs-on: ubuntu-latest

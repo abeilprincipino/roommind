@@ -37,6 +37,7 @@ interface DragState {
   kind: GripKind | "move";
   day: Weekday;
   key: number;
+  pointerId: number;
   active: boolean;
   startX: number;
   startY: number;
@@ -65,7 +66,6 @@ export class RsScheduleTimeline extends LitElement {
   @state() private _tick = 0;
 
   private _drag: DragState | null = null;
-  private _swallowClick = false;
   private _clock?: ReturnType<typeof setInterval>;
 
   static styles = css`
@@ -297,21 +297,33 @@ export class RsScheduleTimeline extends LitElement {
       cursor: ew-resize;
     }
     .grip.left {
-      left: -13px;
+      left: auto;
+      right: calc(100% - min(6px, 25%));
     }
     .grip.right {
-      right: -13px;
+      right: auto;
+      left: calc(100% - min(6px, 25%));
     }
     .grip.left::after,
     .grip.right::after {
       width: 5px;
       height: 24px;
     }
+    .grip.left::after {
+      left: auto;
+      right: 0;
+      transform: translate(50%, -50%);
+    }
+    .grip.right::after {
+      left: 0;
+      transform: translate(-50%, -50%);
+    }
     .grip.temp {
       top: -13px;
-      left: 26px;
-      right: 26px;
-      min-width: 18px;
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%);
+      width: max(18px, calc(100% - 52px));
       height: 26px;
       cursor: ns-resize;
     }
@@ -587,7 +599,7 @@ export class RsScheduleTimeline extends LitElement {
   }
 
   private _onTrackClick(e: MouseEvent, day: Weekday): void {
-    if (this.readonly || this._swallowClick) return;
+    if (this.readonly) return;
     const range = newBlockRange(this.week[day], this._secondsAt(e, e.currentTarget as HTMLElement));
     if (range) this._emit("block-add", { day, ...range });
     this._ghost = null;
@@ -605,7 +617,7 @@ export class RsScheduleTimeline extends LitElement {
 
   private _onBlockClick(e: MouseEvent, day: Weekday, block: DraftBlock): void {
     e.stopPropagation();
-    if (!this._swallowClick) this._emit("block-select", { day, key: block.key });
+    this._emit("block-select", { day, key: block.key });
   }
 
   // ─── Keyboard ────────────────────────────────────────────────────
@@ -653,6 +665,7 @@ export class RsScheduleTimeline extends LitElement {
       kind: grip ?? "move",
       day,
       key: block.key,
+      pointerId: e.pointerId,
       active: false,
       startX: e.clientX,
       startY: e.clientY,
@@ -668,7 +681,7 @@ export class RsScheduleTimeline extends LitElement {
 
   private _onDragMove = (e: PointerEvent): void => {
     const drag = this._drag;
-    if (!drag) return;
+    if (!drag || e.pointerId !== drag.pointerId) return;
     if (!drag.active) {
       if (Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) < 4) return;
       drag.active = true;
@@ -725,15 +738,21 @@ export class RsScheduleTimeline extends LitElement {
     };
   }
 
-  private _onDragEnd = (): void => {
+  private _onDragEnd = (e: PointerEvent): void => {
+    if (this._drag && e.pointerId !== this._drag.pointerId) return;
     const wasActive = this._drag?.active ?? false;
     this._drag = null;
     this._bubble = null;
     this._removeDragListeners();
     if (wasActive) {
-      // The browser still fires click after pointerup: it must not select or add a block.
-      this._swallowClick = true;
-      setTimeout(() => (this._swallowClick = false), 0);
+      // The browser still fires click after pointerup, possibly on a common ancestor such as the
+      // dialog backdrop: swallow it so it cannot select, add a block or discard the dialog.
+      const swallow = (ev: Event): void => {
+        ev.stopPropagation();
+        ev.preventDefault();
+      };
+      window.addEventListener("click", swallow, true);
+      setTimeout(() => window.removeEventListener("click", swallow, true), 0);
     }
   };
 

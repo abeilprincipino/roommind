@@ -88,8 +88,12 @@ export class RsScheduleEditor extends LitElement {
       display: block;
     }
     .stack {
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: 16px;
+      min-width: 0;
+    }
+    .stack > * {
       min-width: 0;
     }
     button {
@@ -388,6 +392,7 @@ export class RsScheduleEditor extends LitElement {
       padding: 12px 0;
       background: var(--card-background-color);
       border-top: 1px solid var(--divider-color);
+      box-shadow: 0 24px 0 var(--card-background-color);
     }
     .footer p {
       margin: 0 auto 0 0;
@@ -454,6 +459,7 @@ export class RsScheduleEditor extends LitElement {
     this._loading = false;
     if (this.selectName) {
       await this.updateComplete;
+      this.renderRoot.querySelector<HTMLInputElement>(".name")?.focus();
       this.renderRoot.querySelector<HTMLInputElement>(".name")?.select();
     }
   }
@@ -822,13 +828,15 @@ export class RsScheduleEditor extends LitElement {
       ? this._error
       : !valid
         ? this._t("schedule_editor.footer_invalid")
-        : changes
-          ? this._t("schedule_editor.footer_changes", { count: changes })
-          : this._message || this._t("schedule_editor.footer_none");
+        : this._message
+          ? this._message
+          : changes
+            ? this._t("schedule_editor.footer_changes", { count: changes })
+            : this._t("schedule_editor.footer_none");
     return html`<div class="footer">
       <p class=${this._error || !valid ? "error" : ""} role="status">${status}</p>
       <button class="action" @click=${() => this.requestClose()}>
-        ${this._t("schedule_editor.cancel")}
+        ${this._t(changes ? "schedule_editor.cancel" : "schedule_editor.close")}
       </button>
       <button
         class="action primary"
@@ -934,7 +942,8 @@ export class RsScheduleEditor extends LitElement {
     const block = this._selectedBlock;
     if (!block) return;
     const isComfort = blockTemp(block.data, side) === null;
-    const value = isComfort ? this._comfort[side] : null;
+    const { minTemp, maxTemp } = this._validation;
+    const value = isComfort ? snapTemp(this._comfort[side], this._step, minTemp, maxTemp) : null;
     this._patchSelected({ data: setBlockTemp(block.data, side, value) });
   }
 

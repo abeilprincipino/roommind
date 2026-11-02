@@ -53,6 +53,11 @@ export class RsScheduleSettings extends RsScheduleBase {
     RsScheduleBase.sharedStyles,
     inputStyles,
     css`
+      .schedule-row > ha-icon-button {
+        --mdc-icon-button-size: 28px;
+        --mdc-icon-size: 16px;
+      }
+
       .fallback-hint {
         font-size: 11px;
         color: var(--secondary-text-color);

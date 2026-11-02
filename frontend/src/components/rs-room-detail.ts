@@ -379,7 +379,11 @@ export class RsRoomDetail extends LitElement {
     this._editing = "scheduleEditor";
   };
 
+  private _creating = false;
+
   private _onScheduleCreate = async () => {
+    if (this._creating) return;
+    this._creating = true;
     this._createError = "";
     try {
       const name = this._displayName || this.area.name;
@@ -392,6 +396,8 @@ export class RsRoomDetail extends LitElement {
       this._editing = "scheduleEditor";
     } catch (err) {
       this._createError = (err as { message?: string } | null)?.message ?? String(err);
+    } finally {
+      this._creating = false;
     }
   };
 

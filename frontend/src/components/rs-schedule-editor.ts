@@ -783,17 +783,6 @@ export class RsScheduleEditor extends LitElement {
       </div>`;
     }
     const changes = this._changeCount();
-    if (this._conflict) {
-      return html`<div class="footer">
-        <p class="error">${this._t("schedule_editor.conflict")}</p>
-        <button class="action" @click=${this._onReload}>
-          ${this._t("schedule_editor.conflict_reload")}
-        </button>
-        <button class="action primary" @click=${() => this._save(true)}>
-          ${this._t("schedule_editor.conflict_overwrite")}
-        </button>
-      </div>`;
-    }
     if (this._confirming) {
       return html`<div class="footer">
         <p>${this._t("schedule_editor.discard_question", { count: changes })}</p>
@@ -802,6 +791,17 @@ export class RsScheduleEditor extends LitElement {
         </button>
         <button class="action primary" @click=${this._close}>
           ${this._t("schedule_editor.discard")}
+        </button>
+      </div>`;
+    }
+    if (this._conflict) {
+      return html`<div class="footer">
+        <p class="error">${this._t("schedule_editor.conflict")}</p>
+        <button class="action" @click=${this._onReload}>
+          ${this._t("schedule_editor.conflict_reload")}
+        </button>
+        <button class="action primary" @click=${() => this._save(true)}>
+          ${this._t("schedule_editor.conflict_overwrite")}
         </button>
       </div>`;
     }
@@ -969,6 +969,8 @@ export class RsScheduleEditor extends LitElement {
   private async _save(overwrite: boolean): Promise<void> {
     const item = this._item;
     if (!item) return;
+    const week = this._week;
+    const name = this._name.trim();
     this._saving = true;
     this._error = "";
     try {
@@ -979,11 +981,11 @@ export class RsScheduleEditor extends LitElement {
           return;
         }
       }
-      const payload = toUpdatePayload(this._name.trim(), item.icon, this._week);
+      const payload = toUpdatePayload(name, item.icon, week);
       this._item = await updateSchedule(this.hass, item.id, payload);
-      this._name = this._name.trim();
-      this._savedName = this._name;
-      this._savedWeek = this._week;
+      if (this._name.trim() === name) this._name = name;
+      this._savedName = name;
+      this._savedWeek = week;
       this._conflict = false;
       this._message = this._t("schedule_editor.saved");
     } catch (err) {

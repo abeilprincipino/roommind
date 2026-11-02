@@ -6,6 +6,7 @@ import contextlib
 import logging
 import time
 from datetime import UTC, datetime
+from datetime import time as dt_time
 from unittest.mock import AsyncMock, MagicMock
 from zoneinfo import ZoneInfo
 
@@ -1424,6 +1425,24 @@ def _ha_time_zone(name: str):
 def _utc_ts(year, month, day, hour, minute=0):
     """Epoch seconds for an explicit UTC wall-clock instant."""
     return datetime(year, month, day, hour, minute, tzinfo=UTC).timestamp()
+
+
+class TestFindActiveBlockEndOfDay:
+    """schedule.get_schedule returns time.max for a block ending at midnight."""
+
+    _MONDAY_EVENING = {"monday": [{"from": dt_time(20, 0), "to": dt_time.max, "data": {"temperature": 21.0}}]}
+
+    def test_block_ending_at_midnight_is_active_until_the_end_of_the_day(self):
+        ts = _utc_ts(2024, 7, 8, 23, 59)  # a Monday
+        with _ha_time_zone("UTC"):
+            block = find_active_block(self._MONDAY_EVENING, ts)
+        assert block is not None
+        assert block["temperature"] == 21.0
+
+    def test_block_ending_at_midnight_does_not_leak_into_the_next_day(self):
+        ts = _utc_ts(2024, 7, 9, 0, 0)  # the Tuesday after
+        with _ha_time_zone("UTC"):
+            assert find_active_block(self._MONDAY_EVENING, ts) is None
 
 
 class TestTimezoneAwareBlockResolution:

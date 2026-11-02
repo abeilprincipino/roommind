@@ -524,7 +524,16 @@ export class RsScheduleSettings extends RsScheduleBase {
           unit: tempUnit(this.hass),
         });
       }
-      if (heatTemp != null || coolTemp != null) {
+      if ((heatTemp != null || coolTemp != null) && this.climateMode !== "auto") {
+        // A single-mode room acts on one side only, so show only that side.
+        const own = this.climateMode === "cool_only" ? coolTemp : heatTemp;
+        if (own != null) {
+          return localize("schedule.from_schedule", l, {
+            temp: String(own),
+            unit: tempUnit(this.hass),
+          });
+        }
+      } else if (heatTemp != null || coolTemp != null) {
         // heatTemp/coolTemp are entity attributes (already display units); the
         // comfort fallbacks are backend Celsius and need converting.
         return localize("schedule.from_schedule_split", l, {

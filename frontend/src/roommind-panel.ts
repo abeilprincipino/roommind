@@ -486,6 +486,7 @@ export class RoomMindPanel extends LitElement {
           <rs-room-detail
             .area=${area}
             .config=${config}
+            .rooms=${this._rooms}
             .hass=${this.hass}
             .presenceEnabled=${this._presenceEnabled}
             .presencePersons=${this._presencePersons}

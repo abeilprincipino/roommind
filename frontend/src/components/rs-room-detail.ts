@@ -31,16 +31,21 @@ import { fireSaveStatus } from "../utils/events";
 import { resolveHeatingSystemType } from "../utils/device-utils";
 import { DEFAULT_OCCUPANCY_ECO_DELAY } from "../utils/constants";
 import type { RsOverrideSection } from "./rs-override-section";
+import "./rs-schedule-editor";
+import type { RsScheduleEditor } from "./rs-schedule-editor";
+import { createSchedule, findScheduleEntityId } from "../utils/schedule-api";
 
 const CONTROL_DOCS_URL =
   "https://github.com/snazzybean/roommind/blob/main/docs/control-and-devices.md";
 
-type EditableSection = "schedule" | "devices" | "sensors" | "presence" | "covers" | "heatSource";
+type EditableSection =
+  "schedule" | "scheduleEditor" | "devices" | "sensors" | "presence" | "covers" | "heatSource";
 
 @customElement("rs-room-detail")
 export class RsRoomDetail extends LitElement {
   @property({ attribute: false }) public area!: HassArea;
   @property({ attribute: false }) public config: RoomConfig | null = null;
+  @property({ attribute: false }) public rooms: Record<string, RoomConfig> = {};
   @property({ attribute: false }) public hass!: HomeAssistant;
   @property({ type: Boolean }) public presenceEnabled = false;
   @property({ attribute: false }) public presencePersons: string[] = [];
@@ -73,6 +78,9 @@ export class RsRoomDetail extends LitElement {
   @state() private _error = "";
   @state() private _dirty = false;
   @state() private _editing: EditableSection | null = null;
+  @state() private _editorEntity = "";
+  @state() private _editorSelectName = false;
+  @state() private _createError = "";
   @state() private _selectedPresencePersons: string[] = [];
   @state() private _displayName = "";
   @state() private _selectedCovers: Set<string> = new Set();
@@ -364,6 +372,33 @@ export class RsRoomDetail extends LitElement {
     this._editing = null;
   };
 
+  private _onScheduleEdit = (e: CustomEvent<{ entityId: string }>) => {
+    this._editorEntity = e.detail.entityId;
+    this._editorSelectName = false;
+    this._createError = "";
+    this._editing = "scheduleEditor";
+  };
+
+  private _onScheduleCreate = async () => {
+    this._createError = "";
+    try {
+      const name = this._displayName || this.area.name;
+      const item = await createSchedule(this.hass, name);
+      const entityId = await findScheduleEntityId(this.hass, item.id);
+      this._schedules = [...this._schedules, { entity_id: entityId }];
+      this._autoSave();
+      this._editorEntity = entityId;
+      this._editorSelectName = true;
+      this._editing = "scheduleEditor";
+    } catch (err) {
+      this._createError = (err as { message?: string } | null)?.message ?? String(err);
+    }
+  };
+
+  private _requestEditorClose = () => {
+    this.renderRoot.querySelector<RsScheduleEditor>("rs-schedule-editor")?.requestClose();
+  };
+
   /** Expose effective override for hero-status via the override sub-component. */
   private _getEffectiveOverride(): {
     active: boolean;
@@ -652,6 +687,27 @@ export class RsRoomDetail extends LitElement {
     const lang = this.hass.language;
 
     switch (this._editing) {
+      case "scheduleEditor":
+        return html`<rs-edit-dialog
+          open
+          icon="mdi:calendar-edit"
+          .heading=${localize("schedule_editor.heading", lang)}
+          @rs-dialog-closed=${this._requestEditorClose}
+        >
+          <rs-schedule-editor
+            .hass=${this.hass}
+            .entityId=${this._editorEntity}
+            .climateMode=${this._climateMode}
+            .comfortHeat=${this._comfortHeat}
+            .comfortCool=${this._comfortCool}
+            .ecoHeat=${this._ecoHeat}
+            .ecoCool=${this._ecoCool}
+            .rooms=${this.rooms}
+            .areaId=${this.area.area_id}
+            .selectName=${this._editorSelectName}
+            @editor-closed=${() => (this._editing = "schedule")}
+          ></rs-schedule-editor>
+        </rs-edit-dialog>`;
       case "schedule":
         return html`<rs-edit-dialog
           open
@@ -661,6 +717,7 @@ export class RsRoomDetail extends LitElement {
           @rs-dialog-closed=${this._closeEdit}
         >
           <div slot="info">
+            <p>${unsafeHTML(localize("schedule.help_editor", lang))}</p>
             <p><strong>${localize("schedule.help_temps_title", lang)}</strong></p>
             <p>${localize("schedule.help_temps", lang)}</p>
             <ol style="margin: 4px 0 0 0; padding-left: 20px; line-height: 1.8">
@@ -709,6 +766,7 @@ export class RsRoomDetail extends LitElement {
             </p>
             <p>${unsafeHTML(localize("schedule.help_multi", lang))}</p>
           </div>
+          ${this._createError ? html`<div class="error">${this._createError}</div>` : nothing}
           <rs-schedule-settings
             .hass=${this.hass}
             .schedules=${this._schedules}
@@ -730,6 +788,8 @@ export class RsRoomDetail extends LitElement {
             @eco-heat-changed=${this._onEcoHeatChanged}
             @eco-cool-changed=${this._onEcoCoolChanged}
             @preheat-changed=${this._onPreheatChanged}
+            @schedule-edit=${this._onScheduleEdit}
+            @schedule-create=${this._onScheduleCreate}
           ></rs-schedule-settings>
         </rs-edit-dialog>`;
       case "devices":

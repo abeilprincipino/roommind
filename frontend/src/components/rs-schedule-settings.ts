@@ -20,6 +20,9 @@ import "./shared/rs-toggle-row";
 /** Mirrors _WEEKDAYS in the backend's schedule_utils.py. */
 const WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
+const ICON_EDIT =
+  "M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z";
+
 @customElement("rs-schedule-settings")
 export class RsScheduleSettings extends RsScheduleBase {
   @property({ attribute: false }) public schedules: ScheduleEntry[] = [];
@@ -76,6 +79,24 @@ export class RsScheduleSettings extends RsScheduleBase {
 
       .preheat-toggle {
         margin-top: 16px;
+      }
+
+      .new-schedule {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+        padding: 8px 14px;
+        border: 1px solid var(--divider-color);
+        border-radius: 8px;
+        background: none;
+        color: var(--primary-color);
+        font: inherit;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      .new-schedule ha-icon {
+        --mdc-icon-size: 18px;
       }
 
       .view-temps {
@@ -253,6 +274,14 @@ export class RsScheduleSettings extends RsScheduleBase {
         (eid) => this._addSchedule(eid),
         localize("schedule.create_helper_hint", l),
       )}
+      ${
+        this.hass.user?.is_admin
+          ? html`<button class="new-schedule" @click=${this._emitCreate}>
+              <ha-icon icon="mdi:calendar-plus"></ha-icon>
+              ${localize("schedule.new", l)}
+            </button>`
+          : nothing
+      }
       ${this._renderSelectorSection(
         count,
         localize("schedule.selector_label", l),
@@ -306,6 +335,15 @@ export class RsScheduleSettings extends RsScheduleBase {
               <span class="schedule-status-dot"></span>
               <span class="schedule-name">${this._getFriendlyName(schedule.entity_id)}</span>
               <span class="schedule-status">${this._getStatusText(index, state)}</span>
+              ${
+                this.hass.user?.is_admin
+                  ? html`<ha-icon-button
+                      .path=${ICON_EDIT}
+                      .label=${localize("schedule.edit", l)}
+                      @click=${() => this._emitEdit(schedule.entity_id)}
+                    ></ha-icon-button>`
+                  : nothing
+              }
               ${this._renderScheduleControls(
                 index,
                 count,
@@ -558,6 +596,20 @@ export class RsScheduleSettings extends RsScheduleBase {
   }
 
   // ─── Schedule management ───────────────────────────────────────
+
+  private _emitEdit(entityId: string) {
+    this.dispatchEvent(
+      new CustomEvent("schedule-edit", {
+        detail: { entityId },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private _emitCreate() {
+    this.dispatchEvent(new CustomEvent("schedule-create", { bubbles: true, composed: true }));
+  }
 
   private _addSchedule(entityId: string) {
     this._emitSchedules([...this.schedules, { entity_id: entityId }]);

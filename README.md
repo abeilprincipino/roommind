@@ -19,6 +19,7 @@
 - **Proportional Valve Control** - TRVs receive calculated setpoints instead of simple on/off, producing smoother temperature curves with less overshoot.
 - **Solar Gain Awareness** - Estimates solar irradiance from sun position and weather data. The model learns each room's solar response and reduces unnecessary heating.
 - **Multi-Scheduler** - Multiple `schedule.*` entities per room with selector switching via `input_boolean` or `input_number`.
+- **Visual Schedule Editor** - Create and edit a room's weekly schedule on a timeline in the panel: drag a block's sides, body and top handle to change its times and temperature, and copy a day to other days. Schedules stay in standard `schedule.*` helpers.
 - **Manual Override** - Boost, eco, or custom temperature with configurable duration and instant UI feedback.
 - **Presence Detection** - Link `person.*`, `device_tracker.*`, `binary_sensor.*`, or `input_boolean.*` entities globally or per room. Eco temperature is used when all assigned persons are away.
 - **Ignore Presence per Room** - Rooms can opt out of presence detection to always follow their schedule.
@@ -66,7 +67,7 @@ After installation, RoomMind appears as a panel in the HA sidebar.
 2. **Click a room card** to open the detail view
 3. **Add devices** - assign at least one thermostat or AC (`climate.*` entity)
 4. **Add a temperature sensor** (optional but recommended) - enables Full Control with proportional valve control
-5. **Add a schedule** - create a `schedule.*` helper in HA and assign it
+5. **Add a schedule** - in the room's schedule section, select **New schedule** to draw one on a timeline, or assign an existing `schedule.*` helper
 6. **Set temperatures** - configure comfort (schedule on) and eco (schedule off) temperatures
 
 RoomMind starts controlling immediately. If MPC is enabled (default), the thermal model begins learning in the background.

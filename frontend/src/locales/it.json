@@ -174,6 +174,7 @@
   "schedule_editor.load_error": "Impossibile caricare il programma: {message}",
   "schedule_editor.readonly_notice": "Questo programma è definito in YAML, quindi qui puoi solo consultarlo. Per cambiarlo modifica la configurazione di Home Assistant.",
   "schedule_editor.shared_notice": "Questo programma ha altri {count} utilizzi, in altre stanze o per le tapparelle. Le modifiche valgono per tutti.",
+  "schedule_editor.assign_on_save": "Questo programma viene assegnato alla stanza quando salvi. Se annulli, resta tra i tuoi helper ma questa stanza non lo usa.",
   "schedule_editor.gesture_hint": "Trascina i lati per cambiare gli orari, il blocco per spostarlo, la maniglia in alto per la temperatura. Tocca una fascia vuota per aggiungere un blocco.",
   "schedule_editor.legend_block": "Temperatura del blocco",
   "schedule_editor.legend_comfort": "Comfort {temp}{unit}",

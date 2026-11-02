@@ -95,7 +95,7 @@ In the room's "Schedule" dialog, each helper row has **Edit**, and **New schedul
 |---|---|
 | Non-admin user | No **Edit** or **New schedule** button |
 | YAML helper | The editor opens read-only, with a notice |
-| New schedule | Creates the helper with a default name, assigns it to the room and opens the editor with the name selected |
+| New schedule | Creates the helper with a default name and opens the editor with the name selected. The helper is assigned to the room on the first successful save, because an empty helper assigned earlier would switch the room to eco or off. If the user closes without saving, it stays unassigned and selectable in the helper list. |
 
 ### Timeline
 

@@ -80,6 +80,7 @@ export class RsRoomDetail extends LitElement {
   @state() private _editing: EditableSection | null = null;
   @state() private _editorEntity = "";
   @state() private _editorSelectName = false;
+  @state() private _editorAssignOnSave = false;
   @state() private _createError = "";
   @state() private _selectedPresencePersons: string[] = [];
   @state() private _displayName = "";
@@ -375,8 +376,18 @@ export class RsRoomDetail extends LitElement {
   private _onScheduleEdit = (e: CustomEvent<{ entityId: string }>) => {
     this._editorEntity = e.detail.entityId;
     this._editorSelectName = false;
+    this._editorAssignOnSave = false;
     this._createError = "";
     this._editing = "scheduleEditor";
+  };
+
+  private _onScheduleSaved = () => {
+    if (!this._editorAssignOnSave) return;
+    this._editorAssignOnSave = false;
+    if (!this._schedules.some((s) => s.entity_id === this._editorEntity)) {
+      this._schedules = [...this._schedules, { entity_id: this._editorEntity }];
+    }
+    this._autoSave();
   };
 
   private _creating = false;
@@ -389,10 +400,9 @@ export class RsRoomDetail extends LitElement {
       const name = this._displayName || this.area.name;
       const item = await createSchedule(this.hass, name);
       const entityId = await findScheduleEntityId(this.hass, item.id);
-      this._schedules = [...this._schedules, { entity_id: entityId }];
-      this._autoSave();
       this._editorEntity = entityId;
       this._editorSelectName = true;
+      this._editorAssignOnSave = true;
       this._editing = "scheduleEditor";
     } catch (err) {
       this._createError = (err as { message?: string } | null)?.message ?? String(err);
@@ -711,6 +721,8 @@ export class RsRoomDetail extends LitElement {
             .rooms=${this.rooms}
             .areaId=${this.area.area_id}
             .selectName=${this._editorSelectName}
+            .assignOnSave=${this._editorAssignOnSave}
+            @schedule-saved=${this._onScheduleSaved}
             @editor-closed=${() => (this._editing = "schedule")}
           ></rs-schedule-editor>
         </rs-edit-dialog>`;

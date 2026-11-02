@@ -64,6 +64,7 @@ export class RsScheduleEditor extends LitElement {
   @property({ attribute: false }) public rooms: Record<string, RoomConfig> = {};
   @property({ type: String }) public areaId = "";
   @property({ type: Boolean }) public selectName = false;
+  @property({ type: Boolean }) public assignOnSave = false;
 
   @state() private _loading = true;
   @state() private _loadError = "";
@@ -562,6 +563,11 @@ export class RsScheduleEditor extends LitElement {
               </div>`
             : nothing
         }
+        ${
+          !this._readonly && this.assignOnSave
+            ? html`<div class="notice">${this._t("schedule_editor.assign_on_save")}</div>`
+            : nothing
+        }
         ${this._renderLegend()}
         <rs-schedule-timeline
           .week=${this._week}
@@ -1010,6 +1016,7 @@ export class RsScheduleEditor extends LitElement {
       this._savedWeek = week;
       this._conflict = false;
       this._message = this._t("schedule_editor.saved");
+      this.dispatchEvent(new CustomEvent("schedule-saved"));
     } catch (err) {
       this._conflict = false;
       this._error = isNotFound(err)

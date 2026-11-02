@@ -174,6 +174,7 @@
   "schedule_editor.load_error": "Could not load this schedule: {message}",
   "schedule_editor.readonly_notice": "This schedule is defined in YAML, so you can only view it here. To change it, edit your Home Assistant configuration.",
   "schedule_editor.shared_notice": "This schedule has {count} other use(s), in other rooms or for covers. Your changes apply to all of them.",
+  "schedule_editor.assign_on_save": "This schedule is assigned to the room when you save. If you cancel, it stays in your schedule helpers but this room does not use it.",
   "schedule_editor.gesture_hint": "Drag the sides to change the times, the block to move it, the top handle to change the temperature. Tap an empty slot to add a block.",
   "schedule_editor.legend_block": "Block temperature",
   "schedule_editor.legend_comfort": "Comfort {temp}{unit}",

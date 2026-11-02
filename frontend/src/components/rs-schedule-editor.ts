@@ -494,6 +494,10 @@ export class RsScheduleEditor extends LitElement {
     };
   }
 
+  private get _draftIsValid(): boolean {
+    return weekIsValid(this._week, this._validation) && this._name.trim() !== "";
+  }
+
   private get _scale() {
     const convert = ([lo, hi]: [number, number]): [number, number] => [
       toDisplay(lo, this.hass),
@@ -796,16 +800,24 @@ export class RsScheduleEditor extends LitElement {
     }
     if (this._conflict) {
       return html`<div class="footer">
-        <p class="error">${this._t("schedule_editor.conflict")}</p>
+        <p class="error">
+          ${this._t("schedule_editor.conflict")}${
+            !this._draftIsValid ? ` ${this._t("schedule_editor.footer_invalid")}` : ""
+          }
+        </p>
         <button class="action" @click=${this._onReload}>
           ${this._t("schedule_editor.conflict_reload")}
         </button>
-        <button class="action primary" @click=${() => this._save(true)}>
+        <button
+          class="action primary"
+          ?disabled=${!this._draftIsValid || this._saving}
+          @click=${() => this._save(true)}
+        >
           ${this._t("schedule_editor.conflict_overwrite")}
         </button>
       </div>`;
     }
-    const valid = weekIsValid(this._week, this._validation) && this._name.trim() !== "";
+    const valid = this._draftIsValid;
     const status = this._error
       ? this._error
       : !valid
@@ -969,6 +981,7 @@ export class RsScheduleEditor extends LitElement {
   private async _save(overwrite: boolean): Promise<void> {
     const item = this._item;
     if (!item) return;
+    if (!this._draftIsValid || this._saving) return;
     const week = this._week;
     const name = this._name.trim();
     this._saving = true;
